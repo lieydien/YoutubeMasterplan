@@ -631,6 +631,19 @@
     "Confirm Infistar Charge Required": "请先确认无限星河视频生成费用。",
     "Infistar MiniMax Landscape Help": "MiniMax H3 当前线路生成横屏素材。选择竖屏成片时，将按“素材画面适配”设置裁剪或留黑边。",
     "Infistar Video API Key": "无限星河视频 API Key",
-    "Infistar Video Base URL": "无限星河视频 Base URL"
+    "Infistar Video Base URL": "无限星河视频 Base URL",
+    "Use YouTube Hook Prompt": "使用开头钩子提示词",
+    "Use YouTube Hook Prompt Help": "将系统提示词替换为“钩子优先”版本：开头一句基于经过验证的 YouTube 开头公式，不做开场白或求订阅，也不编造数字。应用后仍可编辑。",
+    "YouTube Hook Prompt Applied": "已应用钩子优先系统提示词",
+    "YouTube Hook Check": "YouTube 开头检查",
+    "YouTube Hook Check Unsupported Language": "开头评分基于英文校准，当前文案语言暂不评分。",
+    "Hook Score": "开头评分",
+    "Hook Formula": "公式：{formula}",
+    "Hook Formula None": "未匹配到开头公式——这句开头更像总结，而不是钩子。",
+    "Hook Weakest": "最弱项：{weakest} - {fix}",
+    "YouTube Title To Check": "要检查的 YouTube 标题（可选）",
+    "Thumbnail Text To Check": "封面文字（可选）",
+    "Title Score": "标题评分",
+    "YouTube Hook Check Disclaimer": "来自 youtube-agent-skill 的本地启发式评分。低分提示需要再看一遍，高分并不代表一定有效。"
   }
 }

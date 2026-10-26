@@ -67,6 +67,7 @@ from app.services import sonilo as sonilo_service
 from app.services import state as sm
 from app.services import task as tm
 from app.services import version_checker
+from app.services import youtube_kit
 from app.utils.logging_utils import (
     LOG_LEVELS,
     configure_terminal_logger,
@@ -2579,6 +2580,55 @@ def sync_script_order_concat_mode():
 def reset_script_system_prompt():
     """将高级脚本设置中的系统提示词恢复为当前版本的默认内容。"""
     st.session_state["custom_system_prompt"] = llm.DEFAULT_SCRIPT_SYSTEM_PROMPT
+
+
+def apply_hook_first_system_prompt():
+    """填入基于 YouTube 开头公式的系统提示词，之后按普通自定义提示词随任务传递。"""
+    st.session_state["custom_system_prompt"] = (
+        youtube_kit.HOOK_FIRST_SCRIPT_SYSTEM_PROMPT
+    )
+
+
+def _render_youtube_hook_check(script):
+    """对文案开头做本地启发式评分，并可检查 YouTube 标题；不调用大模型。"""
+    hook = youtube_kit.extract_hook(script)
+    if not hook:
+        return
+    with st.expander(tr("YouTube Hook Check"), expanded=False):
+        if not youtube_kit.is_supported_text(hook):
+            st.caption(tr("YouTube Hook Check Unsupported Language"))
+            return
+        result = youtube_kit.score_hook(hook)
+        st.markdown(f"> {result['hook']}")
+        st.metric(
+            tr("Hook Score"),
+            f"{result['verdict']} / 100",
+            delta=result["band"],
+            delta_color="normal" if result["band"] != "WEAK" else "inverse",
+        )
+        for name, value in result["properties"].items():
+            st.progress(value / 100, text=f"{name} {value}")
+        st.caption(
+            tr("Hook Formula").format(formula=result["formula"])
+            if result["formula"]
+            else tr("Hook Formula None")
+        )
+        st.caption(
+            tr("Hook Weakest").format(weakest=result["weakest"], fix=result["fix"])
+        )
+
+        title = st.text_input(tr("YouTube Title To Check"), key="youtube_title_check")
+        thumb = st.text_input(
+            tr("Thumbnail Text To Check"), key="youtube_thumb_check"
+        )
+        if title.strip():
+            lint = youtube_kit.lint_title(title, thumb)
+            st.metric(tr("Title Score"), f"{lint['score']} / 100")
+            for _, message in lint["issues"]:
+                st.markdown(f":red[✗] {message}")
+            for message in lint["good"]:
+                st.markdown(f":green[✓] {message}")
+        st.caption(tr("YouTube Hook Check Disclaimer"))
 
 
 def reset_subtitle_settings():
@@ -5169,7 +5219,18 @@ def _render_script_settings(panel, params):
                         "ui", "custom_system_prompt", params.custom_system_prompt
                     )
 
-                    restore_prompt_col, preview_prompt_col = st.columns(2)
+                    restore_prompt_col, hook_prompt_col, preview_prompt_col = (
+                        st.columns(3)
+                    )
+                    if hook_prompt_col.button(
+                        tr("Use YouTube Hook Prompt"),
+                        key="apply_hook_first_system_prompt",
+                        icon=":material/bolt:",
+                        on_click=apply_hook_first_system_prompt,
+                        help=tr("Use YouTube Hook Prompt Help"),
+                        use_container_width=True,
+                    ):
+                        st.toast(tr("YouTube Hook Prompt Applied"))
                     if restore_prompt_col.button(
                         tr("Restore Default System Prompt"),
                         key="restore_default_system_prompt",
@@ -5205,6 +5266,7 @@ def _render_script_settings(panel, params):
                 height=180,
                 key="video_script",
             )
+            _render_youtube_hook_check(params.video_script)
             if _effective_script_generation_backend() == "loomloom":
                 st.caption(tr("LoomLoom Video Terms Reuse Help"))
             elif st.button(

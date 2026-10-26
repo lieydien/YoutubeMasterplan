@@ -177,6 +177,20 @@ ENGLISH_FALLBACK_KEYS = frozenset(
         "VoxCPM Prompt Pair Required",
         "VoxCPM Prompt Invalid",
         "None (Animation)",
+        # youtube-agent-skill 的开头评分基于英文校准，界面只维护中英文。
+        "Use YouTube Hook Prompt",
+        "Use YouTube Hook Prompt Help",
+        "YouTube Hook Prompt Applied",
+        "YouTube Hook Check",
+        "YouTube Hook Check Unsupported Language",
+        "Hook Score",
+        "Hook Formula",
+        "Hook Formula None",
+        "Hook Weakest",
+        "YouTube Title To Check",
+        "Thumbnail Text To Check",
+        "Title Score",
+        "YouTube Hook Check Disclaimer",
     }
 )
 FORMAT_PLACEHOLDER_PATTERN = re.compile(r"(?<!\{)\{([a-zA-Z_][a-zA-Z0-9_]*)\}(?!\})")
