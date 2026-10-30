@@ -5,6 +5,7 @@ import io
 import math
 import os
 import random
+import re
 import gc
 import subprocess
 import sys
@@ -1455,6 +1456,98 @@ def _rounded_subtitle_background_clip(
     return ImageClip(np.array(img), transparent=True)
 
 
+HOOK_CARD_TEXT_COLOR = "#FFE14D"
+HOOK_CARD_STROKE_COLOR = "#000000"
+HOOK_CARD_BACKGROUND_COLOR = "#000000"
+HOOK_CARD_BACKGROUND_ALPHA = 170
+# 字号按画面宽度计算，竖屏 1080 宽约 108px，约为默认字幕的 1.4 倍。
+HOOK_CARD_FONT_WIDTH_RATIO = 0.1
+HOOK_CARD_MAX_WIDTH_RATIO = 0.84
+HOOK_CARD_MIN_FONT_SCALE = 0.65
+# 卡片中心放在画面 38% 高度处，避开常见的下方字幕区域。
+HOOK_CARD_CENTER_Y_RATIO = 0.38
+
+
+def create_hook_card_clip(
+    text: str,
+    font_path: str,
+    video_width: int,
+    video_height: int,
+    duration: float,
+):
+    """生成开头大字卡，返回已定位并限定时长的剪辑；文本为空时返回 None。
+
+    `|` 或换行表示手动断行，便于让短句按意群分行，而不是被自动换行拆开。
+    """
+    lines = (" ".join(line.split()) for line in re.split(r"\||\n", text or ""))
+    text = "\n".join(line for line in lines if line)
+    if not text or duration <= 0:
+        return None
+
+    font_size = max(24, int(video_width * HOOK_CARD_FONT_WIDTH_RATIO))
+    max_width = int(video_width * HOOK_CARD_MAX_WIDTH_RATIO)
+    # 手动断出的每一行应保持完整：最长一行放不下时先缩小字号（最低 65%），
+    # 仍放不下才交给自动换行。
+    try:
+        base_font = ImageFont.truetype(font_path, font_size)
+        widest = max(
+            base_font.getbbox(line)[2] - base_font.getbbox(line)[0]
+            for line in text.split("\n")
+        )
+        available = max_width - 2 * int(font_size * 0.45) - 2 * max(2, font_size // 18)
+        if widest > available:
+            font_size = max(
+                int(font_size * HOOK_CARD_MIN_FONT_SCALE),
+                int(font_size * available / widest),
+            )
+    except Exception as exc:
+        logger.warning(f"failed to fit hook card font size: {str(exc)}")
+    stroke_width = max(2, font_size // 18)
+    pad_x = int(font_size * 0.45)
+    wrapped_txt, _ = wrap_text(
+        text, max_width=max(1, max_width - 2 * pad_x), font=font_path, fontsize=font_size
+    )
+    try:
+        font = ImageFont.truetype(font_path, font_size)
+        text_w = max(
+            int(font.getbbox(line)[2] - font.getbbox(line)[0])
+            for line in wrapped_txt.split("\n")
+        )
+    except Exception as exc:
+        logger.warning(f"failed to measure hook card text width: {str(exc)}")
+        text_w = max_width
+    box_w = max(1, min(max_width, text_w + 2 * pad_x + 2 * stroke_width))
+
+    text_clip = TextClip(
+        text=wrapped_txt,
+        font=font_path,
+        font_size=font_size,
+        color=HOOK_CARD_TEXT_COLOR,
+        bg_color=None,
+        stroke_color=HOOK_CARD_STROKE_COLOR,
+        stroke_width=stroke_width,
+        interline=int(font_size * 0.15),
+        size=(box_w, None),
+        text_align="center",
+        margin=(0, int(font_size * 0.35)),
+    )
+    box_h = text_clip.h
+    bg_clip = _rounded_subtitle_background_clip(
+        width=box_w,
+        height=box_h,
+        color=HOOK_CARD_BACKGROUND_COLOR,
+        alpha=HOOK_CARD_BACKGROUND_ALPHA,
+        radius=max(8, int(font_size * 0.35)),
+    )
+    text_position = _get_visible_center_position(text_clip, box_w, box_h)
+    card = CompositeVideoClip(
+        [bg_clip, text_clip.with_position(text_position)], size=(box_w, box_h)
+    )
+    y = video_height * HOOK_CARD_CENTER_Y_RATIO - box_h / 2
+    y = max(0, min(y, video_height - box_h))
+    return card.with_start(0).with_duration(duration).with_position(("center", y))
+
+
 def _get_visible_center_position(
     text_clip: TextClip,
     container_width: int,
@@ -1596,7 +1689,8 @@ def generate_video(
     output_dir = os.path.dirname(output_file)
 
     font_path = ""
-    if params.subtitle_enabled:
+    hook_text = (getattr(params, "hook_text", "") or "").strip()
+    if params.subtitle_enabled or hook_text:
         if not params.font_name:
             params.font_name = "STHeitiMedium.ttc"
         # API 入口虽已预检，WebUI、CLI 和内部调用仍可直接进入渲染层；
@@ -1822,6 +1916,23 @@ def generate_video(
                 text_clips.append(clip)
             video_clip = CompositeVideoClip([video_clip, *text_clips])
             clip_stack.callback(video_clip.close)
+
+        if hook_text:
+            hook_duration = min(
+                float(getattr(params, "hook_duration", 2.0) or 2.0),
+                float(video_clip.duration or 0),
+            )
+            hook_clip = create_hook_card_clip(
+                text=hook_text,
+                font_path=font_path,
+                video_width=video_width,
+                video_height=video_height,
+                duration=hook_duration,
+            )
+            if hook_clip is not None:
+                logger.info(f"  ⑥ hook card: {hook_text!r} for {hook_duration:.1f}s")
+                video_clip = CompositeVideoClip([video_clip, hook_clip])
+                clip_stack.callback(video_clip.close)
 
         bgm_enabled = bgm_service.should_use_bgm(
             params.bgm_type, params.bgm_volume

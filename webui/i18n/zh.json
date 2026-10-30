@@ -644,6 +644,10 @@
     "YouTube Title To Check": "要检查的 YouTube 标题（可选）",
     "Thumbnail Text To Check": "封面文字（可选）",
     "Title Score": "标题评分",
-    "YouTube Hook Check Disclaimer": "来自 youtube-agent-skill 的本地启发式评分。低分提示需要再看一遍，高分并不代表一定有效。"
+    "YouTube Hook Check Disclaimer": "来自 youtube-agent-skill 的本地启发式评分。低分提示需要再看一遍，高分并不代表一定有效。",
+    "Hook Card Text": "开头大字卡（开头几秒的大字）",
+    "Hook Card Text Placeholder": "例如：少说一句，多听一句",
+    "Hook Card Text Help": "开头几秒在画面中上部显示 3-6 个大字，用来让观众停止划走。建议与开头旁白用不同的词。用 | 手动换行。留空则不显示。",
+    "Hook Card Seconds": "字卡秒数"
   }
 }

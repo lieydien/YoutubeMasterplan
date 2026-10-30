@@ -163,6 +163,10 @@ class VideoParams(BaseModel):
     font_size: int = Field(default=60, ge=1)
     stroke_color: Optional[str] = "#000000"
     stroke_width: float = Field(default=1.5, ge=0, allow_inf_nan=False)
+    # 开头大字卡：前几秒在画面中上部显示几个大字，用于短视频划走前的第一眼。
+    # 为空时完全沿用原有渲染路径。
+    hook_text: str = Field(default="", max_length=120)
+    hook_duration: float = Field(default=2.0, gt=0, le=10, allow_inf_nan=False)
     n_threads: Optional[int] = 2
     paragraph_number: int = Field(default=1, ge=1, le=10)
     video_script_prompt: str = Field(default="", max_length=2000)

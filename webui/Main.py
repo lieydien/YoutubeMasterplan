@@ -5267,6 +5267,23 @@ def _render_script_settings(panel, params):
                 key="video_script",
             )
             _render_youtube_hook_check(params.video_script)
+            hook_text_col, hook_duration_col = st.columns([3, 1])
+            params.hook_text = hook_text_col.text_input(
+                tr("Hook Card Text"),
+                max_chars=120,
+                placeholder=tr("Hook Card Text Placeholder"),
+                help=tr("Hook Card Text Help"),
+                key="hook_card_text",
+            ).strip()
+            params.hook_duration = hook_duration_col.slider(
+                tr("Hook Card Seconds"),
+                min_value=1.0,
+                max_value=5.0,
+                value=2.0,
+                step=0.5,
+                key="hook_card_duration",
+                disabled=not params.hook_text,
+            )
             if _effective_script_generation_backend() == "loomloom":
                 st.caption(tr("LoomLoom Video Terms Reuse Help"))
             elif st.button(

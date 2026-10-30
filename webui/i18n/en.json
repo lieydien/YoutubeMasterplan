@@ -644,6 +644,10 @@
     "YouTube Title To Check": "YouTube title to check (optional)",
     "Thumbnail Text To Check": "Thumbnail text (optional)",
     "Title Score": "Title score",
-    "YouTube Hook Check Disclaimer": "Local heuristic from youtube-agent-skill. A low score is a reason to look again; a high score is not a promise."
+    "YouTube Hook Check Disclaimer": "Local heuristic from youtube-agent-skill. A low score is a reason to look again; a high score is not a promise.",
+    "Hook Card Text": "Hook card (big text on screen at the start)",
+    "Hook Card Text Placeholder": "e.g. SAY LESS. GET MORE.",
+    "Hook Card Text Help": "3-6 words shown large in the upper middle of the screen for the first seconds, to stop the scroll. Use different words from the spoken first line. Put | where a new line should start. Leave empty for no card.",
+    "Hook Card Seconds": "Card seconds"
   }
 }

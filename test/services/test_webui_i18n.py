@@ -191,6 +191,10 @@ ENGLISH_FALLBACK_KEYS = frozenset(
         "Thumbnail Text To Check",
         "Title Score",
         "YouTube Hook Check Disclaimer",
+        "Hook Card Text",
+        "Hook Card Text Placeholder",
+        "Hook Card Text Help",
+        "Hook Card Seconds",
     }
 )
 FORMAT_PLACEHOLDER_PATTERN = re.compile(r"(?<!\{)\{([a-zA-Z_][a-zA-Z0-9_]*)\}(?!\})")
